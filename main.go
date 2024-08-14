@@ -102,35 +102,35 @@ func parseFlags() error {
 	gcfg.Title = "Go HTTP File Server"
 	gcfg.DeepPathMaxDepth = 5
 	gcfg.NoIndex = false
+	app := kingpin.New("gohttpserver", "").DefaultEnvars()
+	app.HelpFlag.Short('h')
+	app.Version(versionMessage())
+	app.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
+	app.Flag("root", "root directory, default ./").Short('r').StringVar(&gcfg.Root)
+	app.Flag("prefix", "url prefix, eg /foo").StringVar(&gcfg.Prefix)
+	app.Flag("port", "listen port, default 8000").IntVar(&gcfg.Port)
+	app.Flag("addr", "listen address, eg 127.0.0.1:8000").Short('a').StringVar(&gcfg.Addr)
+	app.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
+	app.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
+	app.Flag("auth-type", "Auth type <http|openid>").StringVar(&gcfg.Auth.Type)
+	app.Flag("auth-http", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.Auth.HTTP)
+	app.Flag("auth-openid", "OpenID auth identity url").StringVar(&gcfg.Auth.OpenID)
+	app.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
+	app.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
+	app.Flag("delete", "enable delete support").BoolVar(&gcfg.Delete)
+	app.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
+	app.Flag("debug", "enable debug mode").BoolVar(&gcfg.Debug)
+	app.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
+	app.Flag("title", "server title").StringVar(&gcfg.Title)
+	app.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerID)
+	app.Flag("deep-path-max-depth", "set to -1 to not combine dirs").IntVar(&gcfg.DeepPathMaxDepth)
+	app.Flag("no-index", "disable indexing").BoolVar(&gcfg.NoIndex)
 
-	kingpin.HelpFlag.Short('h')
-	kingpin.Version(versionMessage())
-	kingpin.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
-	kingpin.Flag("root", "root directory, default ./").Short('r').StringVar(&gcfg.Root)
-	kingpin.Flag("prefix", "url prefix, eg /foo").StringVar(&gcfg.Prefix)
-	kingpin.Flag("port", "listen port, default 8000").IntVar(&gcfg.Port)
-	kingpin.Flag("addr", "listen address, eg 127.0.0.1:8000").Short('a').StringVar(&gcfg.Addr)
-	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
-	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
-	kingpin.Flag("auth-type", "Auth type <http|openid>").StringVar(&gcfg.Auth.Type)
-	kingpin.Flag("auth-http", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.Auth.HTTP)
-	kingpin.Flag("auth-openid", "OpenID auth identity url").StringVar(&gcfg.Auth.OpenID)
-	kingpin.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
-	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
-	kingpin.Flag("delete", "enable delete support").BoolVar(&gcfg.Delete)
-	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
-	kingpin.Flag("debug", "enable debug mode").BoolVar(&gcfg.Debug)
-	kingpin.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
-	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
-	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerID)
-	kingpin.Flag("deep-path-max-depth", "set to -1 to not combine dirs").IntVar(&gcfg.DeepPathMaxDepth)
-	kingpin.Flag("no-index", "disable indexing").BoolVar(&gcfg.NoIndex)
-
-	kingpin.Parse() // first parse conf
+	app.Parse(os.Args[1:]) // first parse conf
 
 	if gcfg.Conf != nil {
 		defer func() {
-			kingpin.Parse() // command line priority high than conf
+			app.Parse(os.Args[1:]) // command line priority high than conf
 		}()
 		ymlData, err := ioutil.ReadAll(gcfg.Conf)
 		if err != nil {

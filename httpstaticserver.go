@@ -22,6 +22,7 @@ import (
 	"regexp"
 
 	"github.com/go-yaml/yaml"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
 )
@@ -76,6 +77,7 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	}
 	log.Printf("root path: %s\n", root)
 	m := mux.NewRouter()
+	m.Use(handlers.ProxyHeaders)
 	s := &HTTPStaticServer{
 		Root:  root,
 		Theme: "black",
@@ -127,6 +129,16 @@ func (s *HTTPStaticServer) getRealPath(r *http.Request) string {
 	}
 	realPath := filepath.Join(s.Root, relativePath)
 	return filepath.ToSlash(realPath)
+}
+
+// Return download URL path
+func (s *HTTPStaticServer) getDownloadURL(r *http.Request, filename string) string {
+	scheme := "http"
+	if r.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	url := fmt.Sprintf("%s://%s%s%s",scheme, r.Host, r.URL.Path, filename)
+	return url
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
@@ -292,6 +304,7 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":     true,
 		"destination": dstPath,
+		"downloadurl": s.getDownloadURL(req, filename),
 	})
 }
 
